@@ -39,11 +39,13 @@ module.exports = {
       paricipant_id: payload?.paricipant_id,
       event_id: payload?.event_id,
     };
+    const query = {
+      _id: payload?.event_id,
+      "player.paricipant_id": payload.paricipant_id,
+    };
+    const event = await Event.findOne(query);
 
-    const event = await Event.find({
-      player: { $elemMatch: { paricipant_id: payload.paricipant_id } },
-    });
-    if (event.length > 0) {
+    if (event) {
       const query = {
         _id: payload?.event_id,
         "player.paricipant_id": payload.paricipant_id,
@@ -94,5 +96,13 @@ module.exports = {
         message: e.message,
       });
     }
+  },
+
+  getEventsByParticipant: async (req, res) => {
+    const payload = req.body;
+    const job = await Event.find({
+      player: { $elemMatch: { paricipant_id: payload.paricipant_id } },
+    });
+    return response.ok(res, job);
   },
 };

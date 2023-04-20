@@ -21,5 +21,6 @@ router.post("/create-event", event.createEvent);
 router.get("/get-event", event.getAllEvent);
 router.post("/add-participant", event.addParticipant);
 router.post("/update-event", event.updateEvent);
+router.post("/getEventsByParticipant", event.getEventsByParticipant);
 
 module.exports = router;
