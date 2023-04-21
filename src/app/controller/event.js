@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Event = mongoose.model("Event");
 const response = require("./../responses");
+const { findById } = require("../model/event");
 const Wallet = mongoose.model("Wallet");
 
 module.exports = {
@@ -97,38 +98,44 @@ module.exports = {
   updateEvent: async (req, res) => {
     try {
       const payload = req?.body;
+      const existEvent = await Event.findById(payload?.event_id);
+      if (existEvent && !existEvent?.ans) {
+        let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
+          new: true,
+          upsert: true,
+        });
 
-      let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
-        new: true,
-        upsert: true,
-      });
+        let userlist = ev.player.filter(
+          (f) => f.ans_id.toString() === ev?.ans.toString()
+        );
 
-      let userlist = ev.player.filter(
-        (f) => f.ans_id.toString() === ev?.ans.toString()
-      );
+        let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
 
-      let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
+        let userAmount = Number(amount) / Number(userlist.length);
+        console.log(userAmount);
+        userlist.forEach(async (element) => {
+          const wallet = await Wallet.findOne({
+            user_id: element.paricipant_id,
+          });
+          console.log(wallet);
+          if (wallet) {
+            await Wallet.findOneAndUpdate(
+              { user_id: element.paricipant_id },
+              {
+                balance: wallet?.balance + userAmount,
+              }
+            );
+          }
+        });
 
-      let userAmount = Number(amount) / Number(userlist.length);
-      console.log(userAmount);
-      userlist.forEach(async (element) => {
-        const wallet = await Wallet.findOne({ user_id: element.paricipant_id });
-        console.log(wallet);
-        if (wallet) {
-          await Wallet.findOneAndUpdate(
-            { user_id: element.paricipant_id },
-            {
-              balance: wallet?.balance + userAmount,
-            }
-          );
-        }
-      });
-
-      return res.status(201).json({
-        success: true,
-        message: "Event Saved successfully!",
-        data: ev,
-      });
+        return res.status(201).json({
+          success: true,
+          message: "Event Saved successfully!",
+          data: ev,
+        });
+      } else {
+        return response.badReq(res, { message: "Ans allready given" });
+      }
     } catch (e) {
       return res.status(500).json({
         success: false,
