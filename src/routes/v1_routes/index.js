@@ -15,6 +15,7 @@ router.post(
 
 router.post("/getProfile", user.getProfile);
 router.post("/updateProfile", user.updateProfile);
+router.post("/getWallet", user.getWallet);
 
 //event
 router.post("/create-event", event.createEvent);

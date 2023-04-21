@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Event = mongoose.model("Event");
 const response = require("./../responses");
+const Wallet = mongoose.model("Wallet");
 
 module.exports = {
   createEvent: async (req, res) => {
@@ -39,17 +40,13 @@ module.exports = {
       paricipant_id: payload?.paricipant_id,
       event_id: payload?.event_id,
     };
-    const query = {
+    let query = {
       _id: payload?.event_id,
       "player.paricipant_id": payload.paricipant_id,
     };
     const event = await Event.findOne(query);
 
     if (event) {
-      const query = {
-        _id: payload?.event_id,
-        "player.paricipant_id": payload.paricipant_id,
-      };
       const updateDocument = {
         $set: {
           "player.$.ans_id": payload?.ans_id,
@@ -64,16 +61,36 @@ module.exports = {
       });
       return response.created(res, { message: "Answer updated successfully" });
     } else {
-      let byId = await Event.findById(payload.event_id);
-      const ev = await Event.findByIdAndUpdate(
-        payload.event_id,
-        {
-          $push: { player: participant },
-          wallet: byId?.wallet ? byId?.wallet + payload.amount : payload.amount,
-        },
-        { new: true, upsert: true }
-      );
-      return response.created(res, ev);
+      const wallet = await Wallet.findOne({ user_id: payload.paricipant_id });
+      console.log(wallet);
+      if (wallet?.balance > 0 && wallet?.balance > payload.amount) {
+        await Wallet.findOneAndUpdate(
+          { user_id: payload.paricipant_id },
+          {
+            balance: wallet?.balance - payload.amount,
+            credit:
+              wallet?.credit >= payload.amount
+                ? wallet?.credit - payload.amount
+                : wallet?.credit,
+          }
+        );
+
+        let byId = await Event.findById(payload.event_id);
+        const ev = await Event.findByIdAndUpdate(
+          payload.event_id,
+          {
+            $push: { player: participant },
+            wallet: byId?.wallet
+              ? byId?.wallet + payload.amount
+              : payload.amount,
+          },
+          { new: true, upsert: true }
+        );
+
+        return response.created(res, ev);
+      } else {
+        return response.notFound(res, { message: "Not sufficient balance" });
+      }
     }
   },
 

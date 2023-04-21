@@ -7,6 +7,7 @@ const mailNotification = require("./../services/mailNotification");
 const mongoose = require("mongoose");
 // const Device = mongoose.model("Device");
 const User = mongoose.model("User");
+const Wallet = mongoose.model("Wallet");
 const Verification = mongoose.model("Verification");
 const Notification = mongoose.model("Notification");
 // const Identity = mongoose.model("Identity");
@@ -54,12 +55,28 @@ module.exports = {
         user.password = user.encryptPassword(req.body.password);
         await user.save();
         // let token = await new jwtService().createJwtToken({ id: user._id, email: user.username });
+        const wallet = new Wallet({
+          balance: 25,
+          withdraw: 0,
+          credit: 25,
+          user_id: user?._id,
+        });
+        wallet.save();
         return response.created(res, { email: user.email });
       } else {
         return response.conflict(res, {
           message: "username or email already exists.",
         });
       }
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getWallet: async (req, res) => {
+    const payload = req.body;
+    try {
+      const u = await Wallet.findOne({ user_id: payload.user_id });
+      return response.ok(res, u);
     } catch (error) {
       return response.error(res, error);
     }
@@ -373,6 +390,7 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
   updateProfile: async (req, res) => {
     const payload = req.body;
     delete req.body.password;
