@@ -98,10 +98,32 @@ module.exports = {
     try {
       const payload = req?.body;
 
-      const ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
+      let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
         new: true,
         upsert: true,
       });
+
+      let userlist = ev.player.filter(
+        (f) => f.ans_id.toString() === ev?.ans.toString()
+      );
+
+      let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
+
+      let userAmount = Number(amount) / Number(userlist.length);
+      console.log(userAmount);
+      userlist.forEach(async (element) => {
+        const wallet = await Wallet.findOne({ user_id: element.paricipant_id });
+        console.log(wallet);
+        if (wallet) {
+          await Wallet.findOneAndUpdate(
+            { user_id: element.paricipant_id },
+            {
+              balance: wallet?.balance + userAmount,
+            }
+          );
+        }
+      });
+
       return res.status(201).json({
         success: true,
         message: "Event Saved successfully!",
