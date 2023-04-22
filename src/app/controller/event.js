@@ -191,7 +191,7 @@ module.exports = {
   getEventsByParticipant: async (req, res) => {
     const payload = req.body;
     const job = await Event.find({
-      player: { $elemMatch: { paricipant_id: payload.paricipant_id } },
+      options: { $elemMatch: { players: payload.paricipant_id } },
     });
     return response.ok(res, job);
   },
