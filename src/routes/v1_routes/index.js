@@ -21,6 +21,7 @@ router.post("/getWallet", user.getWallet);
 router.post("/create-event", event.createEvent);
 router.get("/get-event", event.getAllEvent);
 router.post("/add-participant", event.addParticipant);
+router.post("/add-participant2", event.addParticipant2);
 router.post("/update-ans", event.updateEvent);
 router.post("/getEventsByParticipant", event.getEventsByParticipant);
 

@@ -17,11 +17,12 @@ const eventSchema = new mongoose.Schema(
         title: {
           type: String,
         },
-        amount: {
-          type: String,
-        },
+        players: [{ type: mongoose.Types.ObjectId, ref: "User" }],
       },
     ],
+    amount: {
+      type: String,
+    },
     wallet: {
       type: Number,
       default: 0,

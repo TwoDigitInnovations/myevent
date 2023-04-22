@@ -14,6 +14,7 @@ module.exports = {
         desc: payload?.desc,
         img: payload?.img,
         options: payload?.options,
+        amount: payload?.amount,
       });
       const ev = await event.save();
       return res.status(201).json({
@@ -36,6 +37,48 @@ module.exports = {
 
   addParticipant: async (req, res) => {
     const payload = req?.body;
+
+    let event = await Event.findOne({ _id: payload?.event_id });
+    let opt = event.options.find(
+      (f) => f._id?.toString() === payload?.ans_id.toString()
+    );
+    if (opt.players.includes(payload?.paricipant_id)) {
+      return response.badReq(res, { message: "Ans allready given" });
+    }
+    const wallet = await Wallet.findOne({ user_id: payload.paricipant_id });
+    if (wallet?.balance > 0 && wallet?.balance > event?.amount) {
+      await Wallet.findOneAndUpdate(
+        { user_id: payload.paricipant_id },
+        {
+          balance: wallet?.balance - event?.amount,
+          credit:
+            wallet?.credit >= event?.amount
+              ? wallet?.credit - event?.amount
+              : wallet?.credit,
+        }
+      );
+
+      opt.players.push(payload?.paricipant_id);
+
+      let byId = await Event.findById(payload.event_id);
+      event.wallet = byId?.wallet
+        ? byId?.wallet + event?.amount
+        : event?.amount;
+
+      const updatedEvent = await Event.findByIdAndUpdate(
+        payload.event_id,
+        event,
+        { new: true, upsert: true }
+      );
+
+      return response.created(res, updatedEvent);
+    } else {
+      return response.notFound(res, { message: "Not sufficient balance" });
+    }
+  },
+
+  addParticipant2: async (req, res) => {
+    const payload = req?.body;
     let participant = {
       ans_id: payload?.ans_id,
       paricipant_id: payload?.paricipant_id,
@@ -45,6 +88,7 @@ module.exports = {
       _id: payload?.event_id,
       "player.paricipant_id": payload.paricipant_id,
     };
+
     const event = await Event.findOne(query);
 
     if (event) {
@@ -99,43 +143,43 @@ module.exports = {
     try {
       const payload = req?.body;
       const existEvent = await Event.findById(payload?.event_id);
-      if (existEvent && !existEvent?.ans) {
-        let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
-          new: true,
-          upsert: true,
+      // if (existEvent && !existEvent?.ans) {
+      let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
+        new: true,
+        upsert: true,
+      });
+      console.log(ev);
+      let userlist = ev.options.find(
+        (f) => f._id.toString() === ev?.ans.toString()
+      )?.players;
+      console.log(userlist);
+      let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
+
+      let userAmount = Number(amount) / Number(userlist?.length);
+      console.log(userAmount);
+      userlist.forEach(async (element) => {
+        const wallet = await Wallet.findOne({
+          user_id: element,
         });
+        console.log(wallet);
+        if (wallet) {
+          await Wallet.findOneAndUpdate(
+            { user_id: element },
+            {
+              balance: wallet?.balance + userAmount,
+            }
+          );
+        }
+      });
 
-        let userlist = ev.player.filter(
-          (f) => f.ans_id.toString() === ev?.ans.toString()
-        );
-
-        let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
-
-        let userAmount = Number(amount) / Number(userlist.length);
-        console.log(userAmount);
-        userlist.forEach(async (element) => {
-          const wallet = await Wallet.findOne({
-            user_id: element.paricipant_id,
-          });
-          console.log(wallet);
-          if (wallet) {
-            await Wallet.findOneAndUpdate(
-              { user_id: element.paricipant_id },
-              {
-                balance: wallet?.balance + userAmount,
-              }
-            );
-          }
-        });
-
-        return res.status(201).json({
-          success: true,
-          message: "Event Saved successfully!",
-          data: ev,
-        });
-      } else {
-        return response.badReq(res, { message: "Ans allready given" });
-      }
+      return res.status(201).json({
+        success: true,
+        message: "Event Saved successfully!",
+        data: ev,
+      });
+      // } else {
+      //   return response.badReq(res, { message: "Ans allready given" });
+      // }
     } catch (e) {
       return res.status(500).json({
         success: false,
