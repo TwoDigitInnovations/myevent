@@ -62,9 +62,9 @@ module.exports = {
 
       let byId = await Event.findById(payload.event_id);
       event.wallet = byId?.wallet
-        ? byId?.wallet + number(event?.amount)
-        : number(event?.amount);
-
+        ? byId?.wallet + Number(event?.amount)
+        : Number(event?.amount);
+      console.log(event);
       const updatedEvent = await Event.findByIdAndUpdate(
         payload.event_id,
         event,
