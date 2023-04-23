@@ -62,8 +62,8 @@ module.exports = {
 
       let byId = await Event.findById(payload.event_id);
       event.wallet = byId?.wallet
-        ? byId?.wallet + event?.amount
-        : event?.amount;
+        ? byId?.wallet + number(event?.amount)
+        : number(event?.amount);
 
       const updatedEvent = await Event.findByIdAndUpdate(
         payload.event_id,
@@ -143,43 +143,43 @@ module.exports = {
     try {
       const payload = req?.body;
       const existEvent = await Event.findById(payload?.event_id);
-      // if (existEvent && !existEvent?.ans) {
-      let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
-        new: true,
-        upsert: true,
-      });
-      console.log(ev);
-      let userlist = ev.options.find(
-        (f) => f._id.toString() === ev?.ans.toString()
-      )?.players;
-      console.log(userlist);
-      let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
-
-      let userAmount = Number(amount) / Number(userlist?.length);
-      console.log(userAmount);
-      userlist.forEach(async (element) => {
-        const wallet = await Wallet.findOne({
-          user_id: element,
+      if (existEvent && !existEvent?.ans) {
+        let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
+          new: true,
+          upsert: true,
         });
-        console.log(wallet);
-        if (wallet) {
-          await Wallet.findOneAndUpdate(
-            { user_id: element },
-            {
-              balance: wallet?.balance + userAmount,
-            }
-          );
-        }
-      });
+        console.log(ev);
+        let userlist = ev.options.find(
+          (f) => f._id.toString() === ev?.ans.toString()
+        )?.players;
+        console.log(userlist);
+        let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
 
-      return res.status(201).json({
-        success: true,
-        message: "Event Saved successfully!",
-        data: ev,
-      });
-      // } else {
-      //   return response.badReq(res, { message: "Ans allready given" });
-      // }
+        let userAmount = Number(amount) / Number(userlist?.length);
+        console.log(userAmount);
+        userlist.forEach(async (element) => {
+          const wallet = await Wallet.findOne({
+            user_id: element,
+          });
+          console.log(wallet);
+          if (wallet) {
+            await Wallet.findOneAndUpdate(
+              { user_id: element },
+              {
+                balance: wallet?.balance + userAmount,
+              }
+            );
+          }
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: "Event Saved successfully!",
+          data: ev,
+        });
+      } else {
+        return response.badReq(res, { message: "Ans allready given" });
+      }
     } catch (e) {
       return res.status(500).json({
         success: false,
