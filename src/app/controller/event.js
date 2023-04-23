@@ -50,11 +50,11 @@ module.exports = {
       await Wallet.findOneAndUpdate(
         { user_id: payload.paricipant_id },
         {
-          balance: wallet?.balance - event?.amount,
+          balance: wallet?.balance - Number(event?.amount),
           credit:
-            wallet?.credit >= event?.amount
-              ? wallet?.credit - event?.amount
-              : wallet?.credit,
+            wallet?.credit >= Number(event?.amount)
+              ? wallet?.credit - Number(event?.amount)
+              : Number(event?.amount),
         }
       );
 
