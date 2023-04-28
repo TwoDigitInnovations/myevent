@@ -148,6 +148,7 @@ module.exports = {
   updateEvent: async (req, res) => {
     try {
       const payload = req?.body;
+      const existEvent = await Event.findById(payload?.event_id);
       if (existEvent && !existEvent?.ans) {
         let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
           new: true,
