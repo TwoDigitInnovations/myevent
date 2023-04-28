@@ -2,7 +2,9 @@ const mongoose = require("mongoose");
 const Event = mongoose.model("Event");
 const response = require("./../responses");
 const { findById } = require("../model/event");
+const notification = require("../services/notification");
 const Wallet = mongoose.model("Wallet");
+const Notification = mongoose.model("Notification");
 
 module.exports = {
   createEvent: async (req, res) => {
@@ -17,6 +19,10 @@ module.exports = {
         amount: payload?.amount,
       });
       const ev = await event.save();
+      notification.push(
+        "Hello guys! A new event has just been created. Check it out now and join the fun!",
+        ev
+      );
       return res.status(201).json({
         success: true,
         message: "Event Saved successfully!",
@@ -142,35 +148,40 @@ module.exports = {
   updateEvent: async (req, res) => {
     try {
       const payload = req?.body;
-      const existEvent = await Event.findById(payload?.event_id);
       if (existEvent && !existEvent?.ans) {
         let ev = await Event.findByIdAndUpdate(payload?.event_id, payload, {
           new: true,
           upsert: true,
         });
         console.log(ev);
+        notification.push(
+          "The wait is over! Your final answer has been generated, and we're eager to reveal it to you.",
+          ev
+        );
         let userlist = ev.options.find(
           (f) => f._id.toString() === ev?.ans.toString()
         )?.players;
         console.log(userlist);
-        let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
+        if (userlist?.length > 0) {
+          let amount = Number(ev?.wallet) - Number(ev?.wallet) / 10;
 
-        let userAmount = Number(amount) / Number(userlist?.length);
-        console.log(userAmount);
-        userlist.forEach(async (element) => {
-          const wallet = await Wallet.findOne({
-            user_id: element,
+          let userAmount = Number(amount) / Number(userlist?.length);
+          console.log(userAmount);
+          userlist.forEach(async (element) => {
+            const wallet = await Wallet.findOne({
+              user_id: element,
+            });
+            console.log(wallet);
+            if (wallet) {
+              await Wallet.findOneAndUpdate(
+                { user_id: element },
+                {
+                  balance: wallet?.balance + userAmount,
+                }
+              );
+            }
           });
-          console.log(wallet);
-          if (wallet) {
-            await Wallet.findOneAndUpdate(
-              { user_id: element },
-              {
-                balance: wallet?.balance + userAmount,
-              }
-            );
-          }
-        });
+        }
 
         return res.status(201).json({
           success: true,
@@ -193,6 +204,11 @@ module.exports = {
     const job = await Event.find({
       options: { $elemMatch: { players: payload.paricipant_id } },
     });
+    return response.ok(res, job);
+  },
+
+  getNotification: async (req, res) => {
+    const job = await Notification.find().populate("event_id");
     return response.ok(res, job);
   },
 };

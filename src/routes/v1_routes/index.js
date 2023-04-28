@@ -24,5 +24,6 @@ router.post("/add-participant", event.addParticipant);
 router.post("/add-participant2", event.addParticipant2);
 router.post("/update-ans", event.updateEvent);
 router.post("/getEventsByParticipant", event.getEventsByParticipant);
+router.get("/getNotification", event.getNotification);
 
 module.exports = router;
