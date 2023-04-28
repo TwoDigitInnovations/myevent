@@ -7,6 +7,9 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
     },
+    type: {
+      type: String,
+    },
 
     message: {
       type: String,

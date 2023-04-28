@@ -19,7 +19,7 @@ const configuration = OneSignal.createConfiguration({
 const client = new OneSignal.DefaultApi(configuration);
 
 module.exports = {
-  push: async (content, job = null) => {
+  push: async (type, content, job = null) => {
     const devices = await Device.find();
     let player_ids = devices.map((d) => d.player_id);
     // const notObj = { for: user, message: content };
@@ -27,6 +27,7 @@ module.exports = {
     await Notification.create({
       event_id: job?._id,
       message: content,
+      type,
     });
     const notification = new OneSignal.Notification();
     notification.app_id = ONESIGNAL_APP_ID;

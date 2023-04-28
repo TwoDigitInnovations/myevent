@@ -20,6 +20,7 @@ module.exports = {
       });
       const ev = await event.save();
       notification.push(
+        "create",
         "Hello guys! A new event has just been created. Check it out now and join the fun!",
         ev
       );
@@ -156,6 +157,7 @@ module.exports = {
         });
         console.log(ev);
         notification.push(
+          "ansered",
           "The wait is over! Your final answer has been generated, and we're eager to reveal it to you.",
           ev
         );
