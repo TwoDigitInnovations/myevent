@@ -28,7 +28,11 @@ module.exports = {
         id: user._id,
         email: user.email,
       });
-      //await Device.updateOne({ device_token: req.body.device_token }, { $set: { player_id: req.body.player_id, user: user._id } }, { upsert: true });
+      await Device.updateOne(
+        { device_token: req.body.device_token },
+        { $set: { player_id: req.body.player_id, user: user._id } },
+        { upsert: true }
+      );
       return response.ok(res, {
         token,
         email: user.email,
