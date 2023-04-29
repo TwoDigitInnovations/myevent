@@ -55,6 +55,7 @@ module.exports = {
           type: payload.type,
           email: payload.email.toLowerCase(),
           fullName: payload.fullName,
+          contact: payload.contact,
         });
         user.password = user.encryptPassword(req.body.password);
         await user.save();
